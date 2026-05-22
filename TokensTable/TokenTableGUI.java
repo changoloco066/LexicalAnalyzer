@@ -12,6 +12,9 @@ public class TokenTableGUI extends JFrame {
     private DefaultTableModel tokenModel;
     private JTable errorTable;
     private DefaultTableModel errorModel;
+    private JLabel statusLabel;
+    private JTabbedPane tabs;
+   // private JPanel outputPanel;
 
     public TokenTableGUI() {
         setTitle("Lexical Analyzer");
@@ -19,15 +22,14 @@ public class TokenTableGUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // ── Input area (panel superior del split) ──
+        // Input area 
         inputArea = new JTextArea();
         inputArea.setText(buildSampleCode());
         JScrollPane inputScroll = new JScrollPane(inputArea);
         inputScroll.setBorder(BorderFactory.createTitledBorder("Source Code"));
 
-        // ── Tabs con las dos tablas (panel inferior del split) ──
-        JTabbedPane tabs = new JTabbedPane();
-
+        // Tabs con las dos tablas 
+        tabs = new JTabbedPane();
         String[] tokenCols = {"Lexeme", "Token Type", "Position", "Line"};
         tokenModel = new DefaultTableModel(tokenCols, 0);
         tokenTable = new JTable(tokenModel);
@@ -38,17 +40,19 @@ public class TokenTableGUI extends JFrame {
         errorTable = new JTable(errorModel);
         tabs.addTab("Syntax Errors", new JScrollPane(errorTable));
 
-        // ── SplitPane para que el usuario pueda redimensionar ──
+        // SplitPane 
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, inputScroll, tabs);
         splitPane.setDividerLocation(180);
         splitPane.setResizeWeight(0.3);
 
         add(splitPane, BorderLayout.CENTER);
 
-        // ── Botón ──
+        // Botón 
         JButton analyzeBtn = new JButton("Analyze");
         add(analyzeBtn, BorderLayout.SOUTH);
         analyzeBtn.addActionListener(e -> analyzeText());
+
+       
     }
 
     private void analyzeText() {
@@ -63,6 +67,13 @@ public class TokenTableGUI extends JFrame {
 
         loadTokens(tokens);
         loadErrors(errors);
+
+        if(errors.isEmpty()){
+          
+        }else {
+            JOptionPane.showMessageDialog(this, errors.size() + "Syntax error(s) found. ", "Error", JOptionPane.ERROR_MESSAGE );
+            tabs.setSelectedIndex(1);
+        }
     }
 
     private void loadTokens(List<Tokens> tokens) {
