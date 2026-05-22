@@ -7,6 +7,12 @@ public class Parser {
     private final List<Tokens> tokens;
     private int pos;
     private final List<ParseError> errors;
+    private final List<Symbol> symbols = new ArrayList<>();
+    
+
+    public List<Symbol> getSymbols(){
+        return symbols;
+    }
 
     public Parser(List<Tokens> tokens) {
         this.tokens = tokens;
@@ -16,7 +22,7 @@ public class Parser {
 
     public List<ParseError> getErrors() { return errors; }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // Helpers
 
     private Tokens current() {
         return (pos < tokens.size()) ? tokens.get(pos) : null;
@@ -52,7 +58,7 @@ public class Parser {
         return (!isEOF()) ? tokens.get(pos++) : null;
     }
 
-    /** Modo pánico: avanza hasta encontrar un punto de sincronización seguro. */
+    //Modo pánico: avanza hasta encontrar un punto de sincronización seguro. 
     private void addError(String msg) {
         errors.add(new ParseError(msg, currentLine(), currentPos(), lexeme()));
         // Avanzar hasta '}', nueva línea lógica o EOF — con límite para evitar loops
@@ -77,8 +83,7 @@ public class Parser {
         }
     }
 
-    // ── Punto de entrada ─────────────────────────────────────────────────────
-
+    // Punto de entrada 
     public void parse() {
         while (!isEOF()) {
             int before = pos;
@@ -88,7 +93,7 @@ public class Parser {
         }
     }
 
-    // ── Sentencias ────────────────────────────────────────────────────────────
+    // Sentencias 
 
     private void parseStatement() {
         if (isEOF()) return;
@@ -111,8 +116,17 @@ public class Parser {
             addError("Se esperaba un identificador después de 'var'");
             return;
         }
-        pos++;
+            String varName = current().getLexeme();
+            int varLine = current().getLine();
+            pos ++; 
+
         if (!expect("=")) return;
+
+        if(!isEOF()){
+            String varValue = current().getLexeme();
+            String varType = inferType(current());
+            symbols.add(new Symbol(varName, varType, varValue, varLine));
+        }
         parseExpression();
     }
 
@@ -124,6 +138,7 @@ public class Parser {
         } else {
             addError("Se esperaba '=' después del identificador");
         }
+
     }
 
     private void parseIfStmt() {
@@ -169,7 +184,7 @@ public class Parser {
         }
     }
 
-    // ── Expresiones ───────────────────────────────────────────────────────────
+    // Expresiones 
 
     private void parseExpression() {
         parseTerm();
@@ -197,7 +212,6 @@ public class Parser {
 
     private void parseFactor() {
         if (isEOF()) {
-            addError("Se esperaba un valor pero se llegó al final");
             return;
         }
         TokenType type = current().getType();
@@ -229,4 +243,18 @@ public class Parser {
             parseExpression();
         }
     }
-}
+
+    private String inferType(Tokens t){
+        if (t.getType() == TokenType.CONSTANT){
+            return t.getLexeme().contains(".") ? "float" : "int"; // operador ternario, if en una sola linea
+            }else if (t.getType() == TokenType.STRING_DELIMITER || t.getType() == TokenType.STRING_LITERAL){
+                return "string";
+            }else if(t.getType() == TokenType.IDENTIFIER){
+                return "var";
+            }
+            return "unknown";
+        }
+ }
+
+
+

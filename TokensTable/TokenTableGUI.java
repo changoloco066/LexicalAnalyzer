@@ -12,9 +12,10 @@ public class TokenTableGUI extends JFrame {
     private DefaultTableModel tokenModel;
     private JTable errorTable;
     private DefaultTableModel errorModel;
-    private JLabel statusLabel;
+    private DefaultTableModel symbolModel;
+    private JTable symbolTable;
     private JTabbedPane tabs;
-   // private JPanel outputPanel;
+   
 
     public TokenTableGUI() {
         setTitle("Lexical Analyzer");
@@ -40,6 +41,11 @@ public class TokenTableGUI extends JFrame {
         errorTable = new JTable(errorModel);
         tabs.addTab("Syntax Errors", new JScrollPane(errorTable));
 
+        String[] symbolCols = {"Name", "Type", "Value", "Line"};
+        symbolModel = new DefaultTableModel(symbolCols, 0);
+        symbolTable = new JTable(symbolModel);
+        tabs.addTab("Symbol Table", new JScrollPane(symbolTable));
+
         // SplitPane 
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, inputScroll, tabs);
         splitPane.setDividerLocation(180);
@@ -64,9 +70,11 @@ public class TokenTableGUI extends JFrame {
         Parser parser = new Parser(tokens);
         parser.parse();
         List<ParseError> errors = parser.getErrors();
+        List<Symbol> symbols = parser.getSymbols();
 
         loadTokens(tokens);
         loadErrors(errors);
+        loadSymbols(symbols);
 
         if(errors.isEmpty()){
           
@@ -90,6 +98,15 @@ public class TokenTableGUI extends JFrame {
         for (ParseError e : errors) {
             errorModel.addRow(new Object[]{
                 e.getLine(), e.getPosition(), e.getMessage(), e.getContext()
+            });
+        }
+    }
+
+    private void loadSymbols(List<Symbol> symbols){
+        symbolModel.setRowCount(0);
+        for(Symbol s : symbols){
+            symbolModel.addRow(new Object[]{
+                s.getName(), s,getType(), s.getValue(), s.getLine()
             });
         }
     }
