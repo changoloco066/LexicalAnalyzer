@@ -18,7 +18,7 @@ public class TokenTableGUI extends JFrame {
    
 
     public TokenTableGUI() {
-        setTitle("Lexical Analyzer");
+        setTitle("MiniLang Analyzer");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
