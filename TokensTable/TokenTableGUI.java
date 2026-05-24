@@ -106,7 +106,7 @@ public class TokenTableGUI extends JFrame {
         symbolModel.setRowCount(0);
         for(Symbol s : symbols){
             symbolModel.addRow(new Object[]{
-                s.getName(), s,getType(), s.getValue(), s.getLine()
+                s.getName(), s.getType(), s.getValue(), s.getLine()
             });
         }
     }
