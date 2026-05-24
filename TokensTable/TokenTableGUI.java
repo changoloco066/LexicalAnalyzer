@@ -79,7 +79,7 @@ public class TokenTableGUI extends JFrame {
         if(errors.isEmpty()){
           
         }else {
-            JOptionPane.showMessageDialog(this, errors.size() + "Syntax error(s) found. ", "Error", JOptionPane.ERROR_MESSAGE );
+            JOptionPane.showMessageDialog(this, errors.size() + " " + "Syntax error(s) found. ", "Error", JOptionPane.ERROR_MESSAGE );
             tabs.setSelectedIndex(1);
         }
     }
