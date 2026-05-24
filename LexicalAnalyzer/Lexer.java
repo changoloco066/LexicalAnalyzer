@@ -1,4 +1,4 @@
-package TokensTable.TokensTable;
+package TokensTable.LexicalAnalyzer;
 import javax.swing.JFrame;
 import javax.swing.JTable;
 import java.util.*;

@@ -1,4 +1,4 @@
-package TokensTable.TokensTable;
+package TokensTable.LexicalAnalyzer;
 
 public class Symbol{
     private String name;
