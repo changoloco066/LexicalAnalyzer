@@ -16,6 +16,8 @@ public class TokenTableGUI extends JFrame {
     private JTable symbolTable;
     private JTabbedPane tabs;
     private JScrollPane syntaxTreeScroll;
+    private SyntaxTreePanel syntaxTreePanel;
+    private JLabel zoomLabel;
    
 
     public TokenTableGUI() {
@@ -47,8 +49,9 @@ public class TokenTableGUI extends JFrame {
         symbolTable = new JTable(symbolModel);
         tabs.addTab("Symbol Table", new JScrollPane(symbolTable));
 
-        syntaxTreeScroll = new JScrollPane(new SyntaxTreePanel(null));
-        tabs.addTab("Syntax Tree", syntaxTreeScroll);
+        syntaxTreePanel = new SyntaxTreePanel(null);
+        syntaxTreeScroll = new JScrollPane(syntaxTreePanel);
+        tabs.addTab("Syntax Tree", buildSyntaxTreeTab());
 
         // SplitPane 
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, inputScroll, tabs);
@@ -118,9 +121,52 @@ public class TokenTableGUI extends JFrame {
     }
 
     private void loadSyntaxTree(SyntaxTreeNode tree) {
-        syntaxTreeScroll.setViewportView(new SyntaxTreePanel(tree));
+        syntaxTreePanel = new SyntaxTreePanel(tree);
+        syntaxTreeScroll.setViewportView(syntaxTreePanel);
+        updateZoomLabel();
         syntaxTreeScroll.revalidate();
         syntaxTreeScroll.repaint();
+    }
+
+    private JPanel buildSyntaxTreeTab() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        JButton zoomOutBtn = new JButton("-");
+        JButton resetZoomBtn = new JButton("100%");
+        JButton zoomInBtn = new JButton("+");
+        zoomLabel = new JLabel("Zoom: 100%");
+
+        zoomOutBtn.setToolTipText("Zoom out");
+        resetZoomBtn.setToolTipText("Reset zoom");
+        zoomInBtn.setToolTipText("Zoom in");
+
+        zoomOutBtn.addActionListener(e -> {
+            syntaxTreePanel.zoomOut();
+            updateZoomLabel();
+        });
+        resetZoomBtn.addActionListener(e -> {
+            syntaxTreePanel.resetZoom();
+            updateZoomLabel();
+        });
+        zoomInBtn.addActionListener(e -> {
+            syntaxTreePanel.zoomIn();
+            updateZoomLabel();
+        });
+
+        controls.add(zoomOutBtn);
+        controls.add(resetZoomBtn);
+        controls.add(zoomInBtn);
+        controls.add(zoomLabel);
+
+        panel.add(controls, BorderLayout.NORTH);
+        panel.add(syntaxTreeScroll, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void updateZoomLabel() {
+        int percent = (int) Math.round(syntaxTreePanel.getZoom() * 100);
+        zoomLabel.setText("Zoom: " + percent + "%");
     }
 
     private String buildSampleCode() {

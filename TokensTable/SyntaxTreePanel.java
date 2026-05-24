@@ -19,10 +19,15 @@ public class SyntaxTreePanel extends JPanel {
     private static final int HORIZONTAL_GAP = 30;
     private static final int VERTICAL_GAP = 70;
     private static final int MARGIN = 30;
+    private static final double MIN_ZOOM = 0.4;
+    private static final double MAX_ZOOM = 2.5;
 
     private final SyntaxTreeNode root;
     private final Map<SyntaxTreeNode, Integer> subtreeWidths = new HashMap<>();
     private final Map<SyntaxTreeNode, Integer> nodeWidths = new HashMap<>();
+    private int basePreferredWidth;
+    private int basePreferredHeight;
+    private double zoom = 1.0;
 
     public SyntaxTreePanel(SyntaxTreeNode root) {
         this.root = root;
@@ -31,12 +36,41 @@ public class SyntaxTreePanel extends JPanel {
         updatePreferredSize();
     }
 
+    public void zoomIn() {
+        setZoom(zoom + 0.1);
+    }
+
+    public void zoomOut() {
+        setZoom(zoom - 0.1);
+    }
+
+    public void resetZoom() {
+        setZoom(1.0);
+    }
+
+    public double getZoom() {
+        return zoom;
+    }
+
+    public void setZoom(double zoom) {
+        this.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+        applyZoomedPreferredSize();
+        revalidate();
+        repaint();
+    }
+
     private void updatePreferredSize() {
         int treeWidth = root == null ? MIN_NODE_WIDTH : calculateSubtreeWidth(root);
         int treeHeight = root == null ? NODE_HEIGHT : calculateTreeHeight(root);
-        int preferredWidth = Math.max(700, treeWidth + MARGIN * 2);
-        int preferredHeight = Math.max(400, treeHeight + MARGIN * 2);
-        setPreferredSize(new Dimension(preferredWidth, preferredHeight));
+        basePreferredWidth = Math.max(700, treeWidth + MARGIN * 2);
+        basePreferredHeight = Math.max(400, treeHeight + MARGIN * 2);
+        applyZoomedPreferredSize();
+    }
+
+    private void applyZoomedPreferredSize() {
+        int scaledWidth = (int) Math.ceil(basePreferredWidth * zoom);
+        int scaledHeight = (int) Math.ceil(basePreferredHeight * zoom);
+        setPreferredSize(new Dimension(scaledWidth, scaledHeight));
     }
 
     private int calculateSubtreeWidth(SyntaxTreeNode node) {
@@ -94,6 +128,7 @@ public class SyntaxTreePanel extends JPanel {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setStroke(new BasicStroke(1.4f));
         g2.setFont(getFont());
+        g2.scale(zoom, zoom);
 
         if (root == null) {
             drawEmptyMessage(g2);
@@ -101,7 +136,8 @@ public class SyntaxTreePanel extends JPanel {
             subtreeWidths.clear();
             nodeWidths.clear();
             int treeWidth = calculateSubtreeWidth(root);
-            int startX = Math.max(MARGIN, (getWidth() - treeWidth) / 2);
+            int logicalWidth = (int) Math.round(getWidth() / zoom);
+            int startX = Math.max(MARGIN, (logicalWidth - treeWidth) / 2);
             drawNode(g2, root, startX, MARGIN, treeWidth);
         }
 
@@ -112,8 +148,10 @@ public class SyntaxTreePanel extends JPanel {
         g2.setColor(new Color(90, 90, 90));
         String message = "No syntax tree available";
         FontMetrics metrics = g2.getFontMetrics();
-        int x = (getWidth() - metrics.stringWidth(message)) / 2;
-        int y = getHeight() / 2;
+        int logicalWidth = (int) Math.round(getWidth() / zoom);
+        int logicalHeight = (int) Math.round(getHeight() / zoom);
+        int x = (logicalWidth - metrics.stringWidth(message)) / 2;
+        int y = logicalHeight / 2;
         g2.drawString(message, Math.max(MARGIN, x), y);
     }
 
