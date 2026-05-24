@@ -1,6 +1,7 @@
 package TokensTable.TokensTable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Parser {
 
@@ -8,27 +9,33 @@ public class Parser {
     private int pos;
     private final List<ParseError> errors;
     private final List<Symbol> symbols = new ArrayList<>();
-    
-
-    public List<Symbol> getSymbols(){
-        return symbols;
-    }
+    private SyntaxTreeNode root;
 
     public Parser(List<Tokens> tokens) {
         this.tokens = tokens;
-        this.pos    = 0;
+        this.pos = 0;
         this.errors = new ArrayList<>();
     }
 
-    public List<ParseError> getErrors() { return errors; }
+    public List<ParseError> getErrors() {
+        return errors;
+    }
 
-    // Helpers
+    public List<Symbol> getSymbols() {
+        return symbols;
+    }
+
+    public SyntaxTreeNode getSyntaxTree() {
+        return root;
+    }
 
     private Tokens current() {
         return (pos < tokens.size()) ? tokens.get(pos) : null;
     }
 
-    private boolean isEOF() { return pos >= tokens.size(); }
+    private boolean isEOF() {
+        return pos >= tokens.size();
+    }
 
     private String lexeme() {
         Tokens t = current();
@@ -50,7 +57,7 @@ public class Parser {
             pos++;
             return true;
         }
-        addError("Se esperaba '" + lex + "' pero se encontró '" + lexeme() + "'");
+        addError("Se esperaba '" + lex + "' pero se encontro '" + lexeme() + "'");
         return false;
     }
 
@@ -58,203 +65,329 @@ public class Parser {
         return (!isEOF()) ? tokens.get(pos++) : null;
     }
 
-    //Modo pánico: avanza hasta encontrar un punto de sincronización seguro. 
     private void addError(String msg) {
         errors.add(new ParseError(msg, currentLine(), currentPos(), lexeme()));
-        // Avanzar hasta '}', nueva línea lógica o EOF — con límite para evitar loops
+
         int startPos = pos;
-        int safetyLimit = tokens.size(); // nunca más iteraciones que tokens totales
+        int safetyLimit = tokens.size();
         while (!isEOF() && safetyLimit-- > 0) {
             String lex = lexeme();
             TokenType type = current().getType();
-            // Puntos de sincronización: inicio de nueva sentencia o cierre de bloque
             if (lex.equals("}") || lex.equals("{")
-                || type == TokenType.VAR_KEYWORD
-                || type == TokenType.IF_KEYWORD
-                || type == TokenType.WHILE_KEYWORD
-                || type == TokenType.PRINT_KEYWORD) {
+                    || type == TokenType.VAR_KEYWORD
+                    || type == TokenType.IF_KEYWORD
+                    || type == TokenType.WHILE_KEYWORD
+                    || type == TokenType.PRINT_KEYWORD) {
                 break;
             }
             pos++;
         }
-        // Si no avanzamos nada (token problemático es una keyword), forzar avance de 1
+
         if (pos == startPos && !isEOF()) {
             pos++;
         }
     }
 
-    // Punto de entrada 
     public void parse() {
+        root = new SyntaxTreeNode("PROGRAMA");
+        symbols.clear();
+
         while (!isEOF()) {
             int before = pos;
-            parseStatement();
-            // Garantía anti-loop: si parseStatement no avanzó, forzar avance
-            if (pos == before) pos++;
+            SyntaxTreeNode statement = parseStatement();
+            root.addChild(statement);
+
+            if (pos == before) {
+                pos++;
+            }
         }
     }
 
-    // Sentencias 
-
-    private void parseStatement() {
-        if (isEOF()) return;
+    private SyntaxTreeNode parseStatement() {
+        if (isEOF()) {
+            return null;
+        }
 
         TokenType type = current().getType();
-        String lex     = lexeme();
+        String lex = lexeme();
 
-        if (type == TokenType.VAR_KEYWORD)   { parseVarDecl(); }
-        else if (type == TokenType.IF_KEYWORD)    { parseIfStmt(); }
-        else if (type == TokenType.WHILE_KEYWORD) { parseWhileStmt(); }
-        else if (type == TokenType.PRINT_KEYWORD) { parsePrintStmt(); }
-        else if (type == TokenType.IDENTIFIER)    { parseAssignment(); }
-        else if (lex.equals("}"))                 { /* fin de bloque, no consumir */ }
-        else { addError("Sentencia no reconocida: '" + lex + "'"); }
+        if (type == TokenType.VAR_KEYWORD) {
+            return parseVarDecl();
+        } else if (type == TokenType.IF_KEYWORD) {
+            return parseIfStmt();
+        } else if (type == TokenType.WHILE_KEYWORD) {
+            return parseWhileStmt();
+        } else if (type == TokenType.PRINT_KEYWORD) {
+            return parsePrintStmt();
+        } else if (type == TokenType.IDENTIFIER) {
+            return parseAssignment();
+        } else if (lex.equals("}")) {
+            return null;
+        }
+
+        addError("Sentencia no reconocida: '" + lex + "'");
+        return new SyntaxTreeNode("ERROR: " + lex);
     }
 
-    private void parseVarDecl() {
-        pos++; // consume 'var'
+    private SyntaxTreeNode parseVarDecl() {
+        SyntaxTreeNode node = new SyntaxTreeNode("DECLARACION VAR");
+        pos++;
+
         if (isEOF() || current().getType() != TokenType.IDENTIFIER) {
-            addError("Se esperaba un identificador después de 'var'");
-            return;
+            addError("Se esperaba un identificador despues de 'var'");
+            return node;
         }
-            String varName = current().getLexeme();
-            int varLine = current().getLine();
-            pos ++; 
 
-        if (!expect("=")) return;
+        String varName = current().getLexeme();
+        int varLine = current().getLine();
+        node.addChild(new SyntaxTreeNode("IDENTIFICADOR: " + varName));
+        pos++;
 
-        if(!isEOF()){
+        if (!expect("=")) {
+            return node;
+        }
+
+        if (!isEOF()) {
             String varValue = current().getLexeme();
             String varType = inferType(current());
             symbols.add(new Symbol(varName, varType, varValue, varLine));
         }
-        parseExpression();
+
+        SyntaxTreeNode valueNode = new SyntaxTreeNode("VALOR");
+        valueNode.addChild(parseExpression());
+        node.addChild(valueNode);
+        return node;
     }
 
-    private void parseAssignment() {
-        pos++; // consume IDENTIFIER
-        if (!isEOF() && current().getType() == TokenType.ASSIGN_OPERATOR) {
-            pos++;
-            parseExpression();
-        } else {
-            addError("Se esperaba '=' después del identificador");
+    private SyntaxTreeNode parseAssignment() {
+        SyntaxTreeNode node = new SyntaxTreeNode("ASIGNACION");
+        Tokens identifier = consume();
+        if (identifier != null) {
+            node.addChild(new SyntaxTreeNode("IDENTIFICADOR: " + identifier.getLexeme()));
         }
 
+        if (!isEOF() && current().getType() == TokenType.ASSIGN_OPERATOR) {
+            pos++;
+            SyntaxTreeNode valueNode = new SyntaxTreeNode("VALOR");
+            valueNode.addChild(parseExpression());
+            node.addChild(valueNode);
+        } else {
+            addError("Se esperaba '=' despues del identificador");
+        }
+
+        return node;
     }
 
-    private void parseIfStmt() {
-        pos++; // consume 'if'
-        if (!expect("(")) return;
-        parseCondition();
-        if (!expect(")")) return;
-        if (!expect("{")) return;
-        parseBlock();
-        if (!expect("}")) return;
+    private SyntaxTreeNode parseIfStmt() {
+        SyntaxTreeNode node = new SyntaxTreeNode("IF");
+        pos++;
+
+        if (!expect("(")) {
+            return node;
+        }
+        node.addChild(parseCondition());
+        if (!expect(")")) {
+            return node;
+        }
+        if (!expect("{")) {
+            return node;
+        }
+        node.addChild(parseBlock("BLOQUE THEN"));
+        if (!expect("}")) {
+            return node;
+        }
 
         if (!isEOF() && current().getType() == TokenType.ELSE_KEYWORD) {
             pos++;
-            if (!expect("{")) return;
-            parseBlock();
-            if (!expect("}")) return;
+            if (!expect("{")) {
+                return node;
+            }
+            node.addChild(parseBlock("BLOQUE ELSE"));
+            if (!expect("}")) {
+                return node;
+            }
         }
+
+        return node;
     }
 
-    private void parseWhileStmt() {
-        pos++; // consume 'while'
-        if (!expect("(")) return;
-        parseCondition();
-        if (!expect(")")) return;
-        if (!expect("{")) return;
-        parseBlock();
-        if (!expect("}")) return;
+    private SyntaxTreeNode parseWhileStmt() {
+        SyntaxTreeNode node = new SyntaxTreeNode("WHILE");
+        pos++;
+
+        if (!expect("(")) {
+            return node;
+        }
+        node.addChild(parseCondition());
+        if (!expect(")")) {
+            return node;
+        }
+        if (!expect("{")) {
+            return node;
+        }
+        node.addChild(parseBlock());
+        if (!expect("}")) {
+            return node;
+        }
+
+        return node;
     }
 
-    private void parsePrintStmt() {
-        pos++; // consume 'print'
-        if (!expect("(")) return;
-        parseExpression();
-        if (!expect(")")) return;
+    private SyntaxTreeNode parsePrintStmt() {
+        SyntaxTreeNode node = new SyntaxTreeNode("PRINT");
+        pos++;
+
+        if (!expect("(")) {
+            return node;
+        }
+        node.addChild(parseExpression());
+        if (!expect(")")) {
+            return node;
+        }
+
+        return node;
     }
 
-    private void parseBlock() {
-        int limit = tokens.size(); // anti-loop
+    private SyntaxTreeNode parseBlock() {
+        return parseBlock("BLOQUE");
+    }
+
+    private SyntaxTreeNode parseBlock(String label) {
+        SyntaxTreeNode block = new SyntaxTreeNode(label);
+        int limit = tokens.size();
+
         while (!isEOF() && !lexeme().equals("}") && limit-- > 0) {
             int before = pos;
-            parseStatement();
-            if (pos == before) pos++; // anti-loop: forzar avance si no se movió
+            SyntaxTreeNode statement = parseStatement();
+            block.addChild(statement);
+
+            if (pos == before) {
+                pos++;
+            }
         }
+
+        return block;
     }
 
-    // Expresiones 
+    private SyntaxTreeNode parseExpression() {
+        SyntaxTreeNode left = parseTerm();
+        if (left == null) {
+            return null;
+        }
 
-    private void parseExpression() {
-        parseTerm();
+        SyntaxTreeNode expression = null;
         while (!isEOF()) {
             String lex = lexeme();
             if ((lex.equals("+") || lex.equals("-"))
-                && current().getType() == TokenType.ARITHMETIC_OPERATOR) {
+                    && current().getType() == TokenType.ARITHMETIC_OPERATOR) {
+                if (expression == null) {
+                    expression = new SyntaxTreeNode("EXPRESION");
+                    expression.addChild(left);
+                }
+                expression.addChild(new SyntaxTreeNode("OPERADOR: " + lex));
                 pos++;
-                parseTerm();
-            } else break;
+                expression.addChild(parseTerm());
+            } else {
+                break;
+            }
         }
+
+        return expression != null ? expression : left;
     }
 
-    private void parseTerm() {
-        parseFactor();
+    private SyntaxTreeNode parseTerm() {
+        SyntaxTreeNode left = parseFactor();
+        if (left == null) {
+            return null;
+        }
+
+        SyntaxTreeNode term = null;
         while (!isEOF()) {
             String lex = lexeme();
             if ((lex.equals("*") || lex.equals("/"))
-                && current().getType() == TokenType.ARITHMETIC_OPERATOR) {
+                    && current().getType() == TokenType.ARITHMETIC_OPERATOR) {
+                if (term == null) {
+                    term = new SyntaxTreeNode("TERMINO");
+                    term.addChild(left);
+                }
+                term.addChild(new SyntaxTreeNode("OPERADOR: " + lex));
                 pos++;
-                parseFactor();
-            } else break;
+                term.addChild(parseFactor());
+            } else {
+                break;
+            }
         }
+
+        return term != null ? term : left;
     }
 
-    private void parseFactor() {
+    private SyntaxTreeNode parseFactor() {
         if (isEOF()) {
-            return;
+            return null;
         }
+
         TokenType type = current().getType();
-        String lex     = lexeme();
+        String lex = lexeme();
 
         if (type == TokenType.CONSTANT) {
             pos++;
+            return new SyntaxTreeNode("NUMERO: " + lex);
         } else if (type == TokenType.STRING_DELIMITER) {
+            String delimiter = lex;
             pos++;
-            if (!isEOF() && current().getType() == TokenType.STRING_LITERAL) pos++;
-            if (!isEOF() && current().getType() == TokenType.STRING_DELIMITER) pos++;
+
+            String value = "";
+            if (!isEOF() && current().getType() == TokenType.STRING_LITERAL) {
+                value = current().getLexeme();
+                pos++;
+            }
+            if (!isEOF() && current().getType() == TokenType.STRING_DELIMITER) {
+                pos++;
+            } else {
+                addError("Se esperaba cierre de cadena " + delimiter);
+            }
+
+            return new SyntaxTreeNode("STRING: " + value);
         } else if (type == TokenType.STRING_LITERAL) {
             pos++;
+            return new SyntaxTreeNode("STRING: " + lex);
         } else if (type == TokenType.IDENTIFIER) {
             pos++;
+            return new SyntaxTreeNode("IDENTIFICADOR: " + lex);
         } else if (lex.equals("(")) {
             pos++;
-            parseExpression();
+            SyntaxTreeNode expression = parseExpression();
             expect(")");
-        } else {
-            addError("Se esperaba un valor, se encontró '" + lex + "'");
+            SyntaxTreeNode group = new SyntaxTreeNode("GRUPO");
+            group.addChild(expression);
+            return group;
         }
+
+        addError("Se esperaba un valor, se encontro '" + lex + "'");
+        return new SyntaxTreeNode("ERROR: " + lex);
     }
 
-    private void parseCondition() {
-        parseExpression();
+    private SyntaxTreeNode parseCondition() {
+        SyntaxTreeNode condition = new SyntaxTreeNode("CONDICION");
+        condition.addChild(parseExpression());
+
         if (!isEOF() && current().getType() == TokenType.RELATIONAL_OPERATOR) {
+            condition.addChild(new SyntaxTreeNode("OPERADOR: " + lexeme()));
             pos++;
-            parseExpression();
+            condition.addChild(parseExpression());
         }
+
+        return condition;
     }
 
-    private String inferType(Tokens t){
-        if (t.getType() == TokenType.CONSTANT){
-            return t.getLexeme().contains(".") ? "float" : "int"; // operador ternario, if en una sola linea
-            }else if (t.getType() == TokenType.STRING_DELIMITER || t.getType() == TokenType.STRING_LITERAL){
-                return "string";
-            }else if(t.getType() == TokenType.IDENTIFIER){
-                return "var";
-            }
-            return "unknown";
+    private String inferType(Tokens t) {
+        if (t.getType() == TokenType.CONSTANT) {
+            return t.getLexeme().contains(".") ? "float" : "int";
+        } else if (t.getType() == TokenType.STRING_DELIMITER || t.getType() == TokenType.STRING_LITERAL) {
+            return "string";
+        } else if (t.getType() == TokenType.IDENTIFIER) {
+            return "var";
         }
- }
-
-
-
+        return "unknown";
+    }
+}

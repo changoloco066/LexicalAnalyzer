@@ -15,6 +15,7 @@ public class TokenTableGUI extends JFrame {
     private DefaultTableModel symbolModel;
     private JTable symbolTable;
     private JTabbedPane tabs;
+    private JScrollPane syntaxTreeScroll;
    
 
     public TokenTableGUI() {
@@ -46,6 +47,9 @@ public class TokenTableGUI extends JFrame {
         symbolTable = new JTable(symbolModel);
         tabs.addTab("Symbol Table", new JScrollPane(symbolTable));
 
+        syntaxTreeScroll = new JScrollPane(new SyntaxTreePanel(null));
+        tabs.addTab("Syntax Tree", syntaxTreeScroll);
+
         // SplitPane 
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, inputScroll, tabs);
         splitPane.setDividerLocation(180);
@@ -71,10 +75,12 @@ public class TokenTableGUI extends JFrame {
         parser.parse();
         List<ParseError> errors = parser.getErrors();
         List<Symbol> symbols = parser.getSymbols();
+        SyntaxTreeNode tree = parser.getSyntaxTree();
 
         loadTokens(tokens);
         loadErrors(errors);
         loadSymbols(symbols);
+        loadSyntaxTree(tree);
 
         if(errors.isEmpty()){
           
@@ -109,6 +115,12 @@ public class TokenTableGUI extends JFrame {
                 s.getName(), s.getType(), s.getValue(), s.getLine()
             });
         }
+    }
+
+    private void loadSyntaxTree(SyntaxTreeNode tree) {
+        syntaxTreeScroll.setViewportView(new SyntaxTreePanel(tree));
+        syntaxTreeScroll.revalidate();
+        syntaxTreeScroll.repaint();
     }
 
     private String buildSampleCode() {
