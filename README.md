@@ -97,3 +97,7 @@ relOp      → '==' | '!=' | '<' | '>' | '<=' | '>='
 
 - Java 17 or higher (uses switch expressions and text blocks)
 - No external dependencies — built entirely with Java SE and Swing
+
+## Academic Context
+
+This project was developed as part of a university course on Formal Languages and Automata Theory, with the goal of applying concepts such as formal grammars, lexical analysis, and recursive descent parsing in a practical implementation.
