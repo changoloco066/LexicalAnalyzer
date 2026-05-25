@@ -1,4 +1,4 @@
-package TokensTable.LexicalAnalyzer;
+package TokensTable.src.minilang.lexer;
 
 public enum TokenType{
     KEYWORD,

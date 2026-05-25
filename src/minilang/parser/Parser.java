@@ -1,7 +1,11 @@
-package TokensTable.LexicalAnalyzer;
+package TokensTable.src.minilang.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import TokensTable.src.minilang.lexer.TokenType;
+import TokensTable.src.minilang.lexer.Tokens;
+import TokensTable.src.minilang.semantic.Symbol;
 
 public class Parser {
 

@@ -1,4 +1,4 @@
-package TokensTable.LexicalAnalyzer;
+package TokensTable.src.minilang.export;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -6,6 +6,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
+
+import TokensTable.src.minilang.lexer.Tokens;
+import TokensTable.src.minilang.parser.ParseError;
+import TokensTable.src.minilang.parser.SyntaxTreeNode;
+import TokensTable.src.minilang.semantic.Symbol;
 
 public class ResultExporter {
     private static final String SEPARATOR = "==================================================";

@@ -1,6 +1,9 @@
-package TokensTable.LexicalAnalyzer;
+package TokensTable.src.minilang.gui;
 
 import javax.swing.JPanel;
+
+import TokensTable.src.minilang.parser.SyntaxTreeNode;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;

@@ -1,4 +1,4 @@
-package TokensTable.LexicalAnalyzer;
+package TokensTable.src.minilang.parser;
 
 import java.util.ArrayList;
 import java.util.List;
