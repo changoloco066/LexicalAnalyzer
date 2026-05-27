@@ -16,6 +16,7 @@ public class Parser {
     private SyntaxTreeNode root;
 
     public Parser(List<Tokens> tokens) {
+        // El parser trabaja sobre la lista de tokens generada por el lexer.
         this.tokens = tokens;
         this.pos = 0;
         this.errors = new ArrayList<>();
@@ -57,6 +58,7 @@ public class Parser {
     }
 
     private boolean expect(String lex) {
+        // Valida que el token actual sea el esperado y avanza si coincide.
         if (!isEOF() && lexeme().equals(lex)) {
             pos++;
             return true;
@@ -72,6 +74,7 @@ public class Parser {
     private void addError(String msg) {
         errors.add(new ParseError(msg, currentLine(), currentPos(), lexeme()));
 
+        // Intenta recuperarse avanzando hasta una zona donde pueda continuar el analisis.
         int startPos = pos;
         int safetyLimit = tokens.size();
         while (!isEOF() && safetyLimit-- > 0) {
@@ -93,6 +96,7 @@ public class Parser {
     }
 
     public void parse() {
+        // Punto de entrada: construye el nodo principal y analiza sentencia por sentencia.
         root = new SyntaxTreeNode("PROGRAMA");
         symbols.clear();
 
@@ -108,6 +112,7 @@ public class Parser {
     }
 
     private SyntaxTreeNode parseStatement() {
+        // Decide que tipo de sentencia leer segun el token actual.
         if (isEOF()) {
             return null;
         }
@@ -134,6 +139,7 @@ public class Parser {
     }
 
     private SyntaxTreeNode parseVarDecl() {
+        // Analiza declaraciones con la forma: var nombre = valor.
         SyntaxTreeNode node = new SyntaxTreeNode("DECLARACION VAR");
         pos++;
 
@@ -151,6 +157,7 @@ public class Parser {
             return node;
         }
 
+        // Guarda la variable en la tabla de simbolos antes de leer la expresion completa.
         if (!isEOF()) {
             String varValue = current().getLexeme();
             String varType = inferType(current());
@@ -164,6 +171,7 @@ public class Parser {
     }
 
     private SyntaxTreeNode parseAssignment() {
+        // Analiza una asignacion que empieza con un identificador.
         SyntaxTreeNode node = new SyntaxTreeNode("ASIGNACION");
         Tokens identifier = consume();
         if (identifier != null) {
@@ -183,6 +191,7 @@ public class Parser {
     }
 
     private SyntaxTreeNode parseIfStmt() {
+        // Analiza la condicion, el bloque principal y opcionalmente el bloque else.
         SyntaxTreeNode node = new SyntaxTreeNode("IF");
         pos++;
 
@@ -216,6 +225,7 @@ public class Parser {
     }
 
     private SyntaxTreeNode parseWhileStmt() {
+        // Analiza un ciclo while con condicion y bloque entre llaves.
         SyntaxTreeNode node = new SyntaxTreeNode("WHILE");
         pos++;
 
@@ -238,6 +248,7 @@ public class Parser {
     }
 
     private SyntaxTreeNode parsePrintStmt() {
+        // Analiza la llamada print(expresion).
         SyntaxTreeNode node = new SyntaxTreeNode("PRINT");
         pos++;
 
@@ -260,6 +271,7 @@ public class Parser {
         SyntaxTreeNode block = new SyntaxTreeNode(label);
         int limit = tokens.size();
 
+        // Lee sentencias hasta encontrar el cierre del bloque.
         while (!isEOF() && !lexeme().equals("}") && limit-- > 0) {
             int before = pos;
             SyntaxTreeNode statement = parseStatement();
@@ -274,6 +286,7 @@ public class Parser {
     }
 
     private SyntaxTreeNode parseExpression() {
+        // Maneja sumas y restas, apoyandose en terminos para respetar precedencia.
         SyntaxTreeNode left = parseTerm();
         if (left == null) {
             return null;
@@ -300,6 +313,7 @@ public class Parser {
     }
 
     private SyntaxTreeNode parseTerm() {
+        // Maneja multiplicaciones y divisiones antes que la expresion principal.
         SyntaxTreeNode left = parseFactor();
         if (left == null) {
             return null;
@@ -326,6 +340,7 @@ public class Parser {
     }
 
     private SyntaxTreeNode parseFactor() {
+        // Un factor puede ser numero, texto, identificador o expresion agrupada.
         if (isEOF()) {
             return null;
         }
@@ -372,6 +387,7 @@ public class Parser {
     }
 
     private SyntaxTreeNode parseCondition() {
+        // Una condicion une dos expresiones mediante un operador relacional.
         SyntaxTreeNode condition = new SyntaxTreeNode("CONDICION");
         condition.addChild(parseExpression());
 
@@ -385,6 +401,7 @@ public class Parser {
     }
 
     private String inferType(Tokens t) {
+        // Deduce un tipo simple para mostrarlo en la tabla de simbolos.
         if (t.getType() == TokenType.CONSTANT) {
             return t.getLexeme().contains(".") ? "float" : "int";
         } else if (t.getType() == TokenType.STRING_DELIMITER || t.getType() == TokenType.STRING_LITERAL) {

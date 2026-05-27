@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SyntaxTreePanel extends JPanel {
+    // Medidas base para dibujar el arbol de forma legible.
     private static final int MIN_NODE_WIDTH = 120;
     private static final int NODE_HEIGHT = 35;
     private static final int NODE_HORIZONTAL_PADDING = 22;
@@ -32,6 +33,7 @@ public class SyntaxTreePanel extends JPanel {
     private int basePreferredHeight;
     private double zoom = 1.0;
 
+    // Recibe la raiz del arbol y prepara el panel para pintarlo.
     public SyntaxTreePanel(SyntaxTreeNode root) {
         this.root = root;
         setBackground(Color.WHITE);
@@ -56,6 +58,7 @@ public class SyntaxTreePanel extends JPanel {
     }
 
     public void setZoom(double zoom) {
+        // El zoom se limita para evitar que el arbol sea demasiado pequeno o grande.
         this.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
         applyZoomedPreferredSize();
         revalidate();
@@ -63,6 +66,7 @@ public class SyntaxTreePanel extends JPanel {
     }
 
     private void updatePreferredSize() {
+        // Calcula el espacio base que necesita el arbol antes de aplicar zoom.
         int treeWidth = root == null ? MIN_NODE_WIDTH : calculateSubtreeWidth(root);
         int treeHeight = root == null ? NODE_HEIGHT : calculateTreeHeight(root);
         basePreferredWidth = Math.max(700, treeWidth + MARGIN * 2);
@@ -77,6 +81,7 @@ public class SyntaxTreePanel extends JPanel {
     }
 
     private int calculateSubtreeWidth(SyntaxTreeNode node) {
+        // El ancho del subarbol depende del nodo actual y de todos sus hijos.
         if (node == null) {
             return 0;
         }
@@ -84,8 +89,10 @@ public class SyntaxTreePanel extends JPanel {
         int nodeWidth = calculateNodeWidth(node);
         int width;
         if (node.getChildren().isEmpty()) {
+            // Un nodo hoja solo necesita su propio ancho.
             width = nodeWidth;
         } else {
+            // Un nodo con hijos usa el ancho mayor entre su caja y sus ramas.
             int childrenWidth = calculateChildrenWidth(node);
             width = Math.max(nodeWidth, childrenWidth);
         }
@@ -102,6 +109,7 @@ public class SyntaxTreePanel extends JPanel {
 
     private int calculateChildrenWidth(SyntaxTreeNode node) {
         int childrenWidth = 0;
+        // Suma el ancho de cada hijo para saber cuanto ocupa el siguiente nivel.
         for (SyntaxTreeNode child : node.getChildren()) {
             childrenWidth += calculateSubtreeWidth(child);
         }
@@ -114,6 +122,7 @@ public class SyntaxTreePanel extends JPanel {
             return 0;
         }
         int maxChildHeight = 0;
+        // Se toma la rama mas alta para definir la altura total del arbol.
         for (SyntaxTreeNode child : node.getChildren()) {
             maxChildHeight = Math.max(maxChildHeight, calculateTreeHeight(child));
         }
@@ -136,6 +145,7 @@ public class SyntaxTreePanel extends JPanel {
         if (root == null) {
             drawEmptyMessage(g2);
         } else {
+            // Se recalculan medidas antes de pintar por si cambio el tamano o la fuente.
             subtreeWidths.clear();
             nodeWidths.clear();
             int treeWidth = calculateSubtreeWidth(root);
@@ -168,6 +178,7 @@ public class SyntaxTreePanel extends JPanel {
         int childX = x + Math.max(0, (subtreeWidth - childrenWidth) / 2);
         int childY = y + NODE_HEIGHT + VERTICAL_GAP;
         for (SyntaxTreeNode child : node.getChildren()) {
+            // Primero se dibuja la linea hacia el hijo y luego el subarbol hijo.
             int childSubtreeWidth = subtreeWidths.getOrDefault(child, MIN_NODE_WIDTH);
             int childCenterX = childX + childSubtreeWidth / 2;
 
@@ -195,6 +206,7 @@ public class SyntaxTreePanel extends JPanel {
     }
 
     private void drawNodeBox(Graphics2D g2, String label, int x, int y, int width) {
+        // Dibuja la caja del nodo y centra su texto.
         g2.setColor(new Color(235, 243, 255));
         g2.fillRoundRect(x, y, width, NODE_HEIGHT, 16, 16);
         g2.setColor(new Color(70, 105, 160));
