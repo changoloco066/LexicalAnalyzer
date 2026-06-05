@@ -1,4 +1,4 @@
-package TokensTable.LexicalAnalyzer;
+package TokensTable.src.minilang.parser;
 
 public class ParseError {
     private final String message;

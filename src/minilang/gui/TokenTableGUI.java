@@ -1,4 +1,4 @@
-package TokensTable.LexicalAnalyzer;
+package TokensTable.src.minilang.gui;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -14,6 +14,15 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
+
+import TokensTable.src.minilang.lexer.Lexer;
+import TokensTable.src.minilang.lexer.Tokens;
+import TokensTable.src.minilang.parser.ParseError;
+import TokensTable.src.minilang.parser.Parser;
+import TokensTable.src.minilang.parser.SyntaxTreeNode;
+import TokensTable.src.minilang.semantic.Symbol;
+import TokensTable.src.minilang.export.*;
+
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.io.File;

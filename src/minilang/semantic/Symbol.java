@@ -1,4 +1,4 @@
-package TokensTable.LexicalAnalyzer;
+package TokensTable.src.minilang.semantic;
 
 public class Symbol{
     private String name;

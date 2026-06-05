@@ -1,6 +1,7 @@
-package TokensTable.LexicalAnalyzer;
+package TokensTable.src.minilang.lexer;
 import javax.swing.JFrame;
 import javax.swing.JTable;
+
 import java.util.*;
 public class Lexer {
  
